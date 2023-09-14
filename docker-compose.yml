@@ -1,0 +1,17 @@
+version: '3.6'
+services:
+  azure-insta-paas:
+    image: skills-matrix-master:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      TZ: "Australia/Brisbane"
+    ports:
+      - "80:80" # dash
+    working_dir: /app
+    # volumes:
+    #   - ./app:/app
+    # entrypoint: ["python", "app.py"]
+    entrypoint: ["gunicorn", "-w", "4", "-b", "0.0.0.0:80", "app:server"]
+
