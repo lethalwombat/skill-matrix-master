@@ -52,3 +52,38 @@ def radar_comparison(df, value: str, variable: str, group_col, groups: str):
         )
     )
     return fig
+
+# single radar chart
+def radar_single(df, value: str, variable: str):
+    fig = px.line_polar(
+        df, r=value, theta=variable, line_close=True, text=value
+    )
+    fig.update_traces(
+        fill='toself',
+        textposition='bottom center'
+    )
+    fig.update_layout(
+        polar = dict(
+            bgcolor='white',
+            hole=0.03,
+            angularaxis = dict(
+                showgrid=True,
+                gridcolor='lightgrey',
+                griddash='2px',
+            ),
+            radialaxis = dict(
+                angle=160,
+                tickangle=160,
+                # tickmode='array',
+                # tickvals=[1, 2, 3, 4, 5],
+                tickfont= dict(
+                    color=COLOR_3,
+                    size=15
+                ),
+                showline=False,
+                showticklabels=False
+            ),            
+        )
+    )
+
+    return fig

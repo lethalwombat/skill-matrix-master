@@ -15,7 +15,7 @@ from helpers_data import (
     df_filter_multiple_simple
 )
 from helpers_plotly import (
-    radar_comparison
+    radar_single, radar_comparison
 )
 
 # app set-up
@@ -49,43 +49,31 @@ options_technologies = get_selector_options('technology')
 options_names = get_selector_options('consultant_name')
 options_streams = sorted(df['persona_stream'].explode().unique().tolist())
 options_categories = get_selector_options('platform_area_categories')
+options_relevance = get_selector_options('relevance')
 
-# comparison tab inputs
-comparison_tab_inputs = dbc.Container([
+# capabilities tab inputs
+capabilities_tab_inputs = dbc.Container([
     dbc.Stack([
-        html_label('Consultant 1'),
-        dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_1'),
-        html_label('Consultant 2'),
-        dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_2'),
         html_label('Persona Stream'),
-        dcc.Dropdown(options_streams, id='input_persona_stream', multi=True),
+        dcc.Dropdown(options_streams, id='input_persona_stream_capability', multi=True),
         html_label('Platform, Area or Categories'),
-        dcc.Dropdown(options_categories, searchable=True, multi=True, id='input_categories'),
-        html_label('Number of Ratings'),
-        dbc.Input(type='number', min=5, max=10, value=5, id='input_n_ratings')
-    ], gap=1)    
+        dcc.Dropdown(options_categories, searchable=True, multi=True, id='input_categories_capability'),
+        html_label('Relevance'),
+        dcc.Dropdown(options_relevance, multi=True, id='input_relevance'),
+        html_label('Minimum Rating'),        
+        dbc.Input(type='number', min=1, max=5, value=1, id='input_min_rating_capability')
+    ], gap=1)
 ], fluid=True)
 
-# comparison tab graph
-comparison_tab_graph = dbc.Container([
-    html.Div([
-        dcc.Graph(
-            id='comparison_graph',
-            config={
-                'staticPlot' : True
-            }
-        )
-    ], id='comparison_graph_hide')
-], fluid=True)
-
-# comparison tab
-comparison_tab = dbc.Container([
+# capabilities tab
+capabilities_tab = dbc.Container([
     dbc.Row([
         dbc.Col([
-            comparison_tab_inputs
+            capabilities_tab_inputs
         ], width=3),
         dbc.Col([
-            comparison_tab_graph
+            # html.H6(id='temp_placeholder')
+            dcc.Graph(id='temp_placeholder')
         ], width=9)
     ])
 ], fluid=True)
@@ -134,6 +122,46 @@ search_tab = dbc.Container([
     ])
 ], fluid=True)
 
+# comparison tab inputs
+comparison_tab_inputs = dbc.Container([
+    dbc.Stack([
+        html_label('Consultant 1'),
+        dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_1'),
+        html_label('Consultant 2'),
+        dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_2'),
+        html_label('Persona Stream'),
+        dcc.Dropdown(options_streams, id='input_persona_stream', multi=True),
+        html_label('Platform, Area or Categories'),
+        dcc.Dropdown(options_categories, searchable=True, multi=True, id='input_categories'),
+        html_label('Number of Ratings'),
+        dbc.Input(type='number', min=5, max=10, value=5, id='input_n_ratings')
+    ], gap=1)    
+], fluid=True)
+
+# comparison tab graph
+comparison_tab_graph = dbc.Container([
+    html.Div([
+        dcc.Graph(
+            id='comparison_graph',
+            config={
+                'staticPlot' : True
+            }
+        )
+    ], id='comparison_graph_hide')
+], fluid=True)
+
+# comparison tab
+comparison_tab = dbc.Container([
+    dbc.Row([
+        dbc.Col([
+            comparison_tab_inputs
+        ], width=3),
+        dbc.Col([
+            comparison_tab_graph
+        ], width=9)
+    ])
+], fluid=True)
+
 # # skills graph
 # test_graph = dcc.Graph(
 #     id='my_graph',
@@ -150,10 +178,36 @@ app.layout = dbc.Container([
     top_heading,
     dbc.Tabs(
         [
+            card_tab(label='Capabilities', content=capabilities_tab, id='tab_capabilities'),
             card_tab(label='Search', content=search_tab, id='tab_search'),
             card_tab(label='Profiles', content=comparison_tab, id='tab_comparison'),
         ])
 ], fluid=True)
+
+# capabilities graph
+@app.callback(
+    Output('temp_placeholder', 'figure'),
+    Input('input_persona_stream_capability', 'value'),
+    Input('input_categories_capability', 'value'),
+    Input('input_relevance', 'value'),
+    Input('input_min_rating_capability', 'value')
+)
+def update_capability_graph(
+    input_persona_stream_capability_value, input_categories_capability_value,
+    input_relevance_value, input_min_rating_capability_value
+):
+    df_out = (
+        df
+        .pipe(df_filter_multiple, input_persona_stream_capability_value, 'persona_stream') # filter by persona stream
+        .pipe(df_filter_multiple_simple, input_categories_capability_value, 'platform_area_categories') # filter by platform area categories
+        .pipe(df_filter_multiple_simple, input_relevance_value, 'relevance') # filter by relevance
+        .query('skill_rating >= @input_min_rating_capability_value') # filter by min rating
+        .groupby(['technology'])['id'].count().reset_index()
+        .rename(columns={'id' : 'rating_counts'})
+        )
+    return radar_single(df_out, 'rating_counts', 'technology')
+    return dash_table_simple(df_out)
+
 
 # comparison graph
 @app.callback(
@@ -173,7 +227,7 @@ def update_graph(
     df_out = (
         df
         .pipe(df_filter_multiple, input_persona_stream_value, 'persona_stream') # filter by persona stream
-        .pipe(df_filter_multiple, input_categories_value, 'platform_area_categories') # filter by platform area categories
+        .pipe(df_filter_multiple_simple, input_categories_value, 'platform_area_categories') # filter by platform area categories
         .pipe(df_top_n_skills, [input_consultant_1_value, input_consultant_2_value], input_n_ratings_value) # filter by consultants
     )
     graph_style = {'display' : 'block'}

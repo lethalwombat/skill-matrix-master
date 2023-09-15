@@ -118,5 +118,4 @@ def df_filter_multiple_simple(df, inputs: list, col: str):
         .query('_temp == 1')
         .drop(columns='_temp')
     )
-
     return df
