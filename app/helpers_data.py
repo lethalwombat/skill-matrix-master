@@ -63,3 +63,60 @@ def df_persona_stream_cleaner(df, col='persona_stream'):
         .apply(lambda x : sorted(x))
     )
     return df
+
+# get top n skills for a list of consultants
+def df_top_n_skills(df, consultants: list, top_n: int):
+
+    # get the first comparison
+    df_comparison = (
+        df
+        .query('consultant_name in @consultants')
+        .sort_values(by=['consultant_name', 'skill_rating'], ascending=[True, False])
+        .groupby('consultant_name')
+        .head(top_n)
+        .reset_index(drop=True)
+    )
+
+    # now we need to get all tech for the full comparison
+    tech_list = df_comparison['technology'].unique().tolist()
+    df_full_comparison = (
+        df
+        .query('consultant_name in @consultants')
+        .query('technology in @tech_list')
+        .reset_index(drop=True)
+    )
+    return df_full_comparison
+
+# check is two lists have an element in common
+common_elem = lambda x, y : any(i in x for i in y)
+
+# filter by multiple selections, both input and target are lists
+def df_filter_multiple(df, inputs: list, col: str):
+    
+    # nothing is selected
+    if not isinstance(inputs, list) or len(inputs) == 0: 
+        return df
+    
+    df = (
+        df
+        .assign(_temp=df[col].apply(lambda x : 1 if common_elem(x, inputs) else 0))
+        .query('_temp == 1')
+        .drop(columns='_temp')
+    )
+    return df
+
+# filter by multiple selections, target is str
+def df_filter_multiple_simple(df, inputs: list, col: str):
+    
+    # nothing is selected
+    if not isinstance(inputs, list) or len(inputs) == 0: 
+        return df
+    
+    df = (
+        df
+        .assign(_temp=df[col].apply(lambda x : 1 if x in inputs else 0))
+        .query('_temp == 1')
+        .drop(columns='_temp')
+    )
+
+    return df
