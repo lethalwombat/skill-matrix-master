@@ -5,8 +5,8 @@ from dash import Dash, dcc, html, dash_table, Input, Output, State, callback_con
 from random import choice
 from helpers_dash import (
     heading, card_tab,
-    html_label, dash_table_interactive,
-    dash_table_simple
+    html_label, html_label_center,
+    dash_table_interactive, dash_table_simple
 )
 from helpers_data import (
     df_renamer, df_dropper,
@@ -61,7 +61,9 @@ capabilities_tab_inputs = dbc.Container([
         html_label('Relevance'),
         dcc.Dropdown(options_relevance, multi=True, id='input_relevance'),
         html_label('Minimum Rating'),        
-        dbc.Input(type='number', min=1, max=5, value=1, id='input_min_rating_capability')
+        dbc.Input(type='number', min=1, max=5, value=1, id='input_min_rating_capability'),
+        html_label_center('< Show Top — Show Bottom >'),          
+        dcc.RangeSlider(min=0, step=1, marks=None, id='input_capability_graph_slider'),
     ], gap=1)
 ], fluid=True)
 
@@ -73,7 +75,7 @@ capabilities_tab = dbc.Container([
         ], width=3),
         dbc.Col([
             # html.H6(id='temp_placeholder')
-            dcc.Graph(id='temp_placeholder')
+            dcc.Graph(id='capability_graph')
         ], width=9)
     ])
 ], fluid=True)
@@ -184,17 +186,42 @@ app.layout = dbc.Container([
         ])
 ], fluid=True)
 
-# capabilities graph
+# rangslider min and max values
 @app.callback(
-    Output('temp_placeholder', 'figure'),
+    Output('input_capability_graph_slider', 'max'),
+    Output('input_capability_graph_slider', 'value'),
     Input('input_persona_stream_capability', 'value'),
     Input('input_categories_capability', 'value'),
     Input('input_relevance', 'value'),
     Input('input_min_rating_capability', 'value')
 )
+def update_slider_max(
+    input_persona_stream_capability_value, input_categories_capability_value,
+    input_relevance_value, input_min_rating_capability_value,
+):
+    df_out = (
+        df
+        .pipe(df_filter_multiple, input_persona_stream_capability_value, 'persona_stream') # filter by persona stream
+        .pipe(df_filter_multiple_simple, input_categories_capability_value, 'platform_area_categories') # filter by platform area categories
+        .pipe(df_filter_multiple_simple, input_relevance_value, 'relevance') # filter by relevance
+        .query('skill_rating >= @input_min_rating_capability_value') # filter by min rating
+        .groupby(['technology'])['id'].count().reset_index()
+        )
+    return df_out.shape[0], [0, min(df_out.shape[0], 15)]
+
+# capabilities graph
+@app.callback(
+    Output('capability_graph', 'figure'),
+    Input('input_persona_stream_capability', 'value'),
+    Input('input_categories_capability', 'value'),
+    Input('input_relevance', 'value'),
+    Input('input_min_rating_capability', 'value'),
+    Input('input_capability_graph_slider', 'value')
+)
 def update_capability_graph(
     input_persona_stream_capability_value, input_categories_capability_value,
-    input_relevance_value, input_min_rating_capability_value
+    input_relevance_value, input_min_rating_capability_value,
+    input_capability_graph_slider_value
 ):
     df_out = (
         df
@@ -204,8 +231,18 @@ def update_capability_graph(
         .query('skill_rating >= @input_min_rating_capability_value') # filter by min rating
         .groupby(['technology'])['id'].count().reset_index()
         .rename(columns={'id' : 'rating_counts'})
+        .sort_values(by='rating_counts', ascending=False)
+        .iloc[input_capability_graph_slider_value[0]:input_capability_graph_slider_value[1]]
         )
-    return radar_single(df_out, 'rating_counts', 'technology')
+
+    # adapt the scale according to counts
+    scale = [0, 10]
+    max_counts = df_out['rating_counts'].max()
+    if max_counts > 10:
+        scale = [0, 25]
+    if max_counts > 25:
+        scale = [0, 55]
+    return radar_single(df_out, 'rating_counts', 'technology', range_r=scale)
     return dash_table_simple(df_out)
 
 
