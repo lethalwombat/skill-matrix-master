@@ -1,5 +1,6 @@
 import dash_bootstrap_components as dbc
-from dash import html, dash_table
+from dash import html, dash_table, dcc
+from random import choice
 
 # color themes
 COLOR_1 = '#800080'
@@ -35,3 +36,4 @@ def dash_table_interactive(df):
 # datatable wrapper simple
 def dash_table_simple(df):
         return dash_table.DataTable(data=df.to_dict('records'))
+

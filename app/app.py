@@ -6,7 +6,6 @@ from random import choice
 from helpers_dash import (
     heading, card_tab,
     html_label, html_label_center,
-    dash_table_interactive, dash_table_simple
 )
 from helpers_data import (
     df_renamer, df_dropper,
@@ -56,23 +55,24 @@ options_streams = sorted(df['persona_stream'].explode().unique().tolist())
 options_categories = get_selector_options('platform_area_categories')
 options_relevance = get_selector_options('relevance')
 
+
 # capabilities tab inputs
-capabilities_tab_inputs = dbc.Container([
+capabilities_tab_inputs = style_dbc([
     dbc.Stack([
         html_label('Persona Stream'),
-        style_dbc(dcc.Dropdown(options_streams, id='input_persona_stream_capability', multi=True)),
+        dcc.Dropdown(options_streams, id='input_persona_stream_capability', placeholder='Select one or many...', multi=True, style={'font-size' : '14px'}),
         html_label('Platform, Area or Categories'),
-        style_dbc(dcc.Dropdown(options_categories, searchable=True, multi=True, id='input_categories_capability')),
+        dcc.Dropdown(options_categories, searchable=True, placeholder='Select one or many...', multi=True, id='input_categories_capability', style={'font-size' : '14px'}),
         html_label('Relevance'),
         # dcc.Dropdown(options_relevance, multi=True, id='input_relevance'),
-        get_container(dbc.Checklist(options=options_relevance, id='input_relevance')),
+        dbc.Checklist(options=options_relevance, id='input_relevance', style={'font-size' : '14px'}),
         html_label_center('< Rating >'),        
         # dbc.Input(type='number', min=1, max=5, value=1, id='input_min_rating_capability'),
-        style_dbc(dcc.RangeSlider(min=1, max=5, step=1, value=[1, 5], id='input_min_rating_capability')),
+        dcc.RangeSlider(min=1, max=5, step=1, value=[1, 5], id='input_min_rating_capability'),
         html_label_center('< Frequent — Rare >'),          
-        style_dbc(dcc.RangeSlider(min=0, step=1, marks=None, id='input_capability_graph_slider'))
+        dcc.RangeSlider(min=0, step=1, marks=None, id='input_capability_graph_slider')
     ], gap=1)
-], fluid=True)
+])
 
 # capabilities tab graph
 capabilities_tab_graph = dbc.Container([
@@ -104,14 +104,14 @@ capabilities_tab = dbc.Container([
 ], fluid=True)
 
 # search tab inputs
-search_tab_inputs = dbc.Container([
+search_tab_inputs = style_dbc([
     dbc.Stack([
         html_label('Technology'),
-        style_dbc(dcc.Dropdown(options_technologies, searchable=True, clearable=True, multi=True, id='input_technology')),
+        dcc.Dropdown(options_technologies, searchable=True, clearable=True, placeholder='Select one or many...', multi=True, id='input_technology', style={'font-size' : '12px'}),
         html_label_center('< Rating >'),
-        style_dbc(dcc.RangeSlider(min=1, max=5, step=1, value=[1, 5], id='input_min_rating_search'))
+        dcc.RangeSlider(min=1, max=5, step=1, value=[1, 5], id='input_min_rating_search')
     ], gap=1)
-], fluid=True)
+])
 
 # search tab table
 search_tab_table = dbc.Container([
@@ -148,20 +148,20 @@ search_tab = dbc.Container([
 ], fluid=True)
 
 # comparison tab inputs
-comparison_tab_inputs = dbc.Container([
+comparison_tab_inputs = style_dbc([
     dbc.Stack([
         html_label('Profile 1'),
-        style_dbc(dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_1')),
+        dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_1', style={'font-size' : '14px'}),
         html_label('Profile 2'),
-        style_dbc(dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_2')),
+        dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_2', style={'font-size' : '14px'}),
         html_label('Persona Stream'),
-        style_dbc(dcc.Dropdown(options_streams, id='input_persona_stream', multi=True)),
+        dcc.Dropdown(options_streams, id='input_persona_stream', placeholder='Select one or many...', multi=True, style={'font-size' : '14px'}),
         html_label('Platform, Area or Categories'),
-        style_dbc(dcc.Dropdown(options_categories, searchable=True, multi=True, id='input_categories')),
+        dcc.Dropdown(options_categories, searchable=True, multi=True, placeholder='Select one or many...', id='input_categories', style={'font-size' : '14px'}),
         html_label_center('Show Ratings'),
-        style_dbc(dcc.Slider(min=5, max=10, step=1, value=7, id='input_n_ratings'))
+        dcc.Slider(min=5, max=10, step=1, value=7, id='input_n_ratings')
     ], gap=1)    
-], fluid=True)
+])
 
 # comparison tab graph
 comparison_tab_graph = dbc.Container([
