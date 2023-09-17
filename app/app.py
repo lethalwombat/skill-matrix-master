@@ -61,14 +61,18 @@ capabilities_tab_inputs = style_dbc([
     dbc.Stack([
         html_label('Persona Stream'),
         dcc.Dropdown(options_streams, id='input_persona_stream_capability', placeholder='Select one or many...', multi=True, style={'font-size' : '14px'}),
+        html.Br(),
         html_label('Platform, Area or Categories'),
         dcc.Dropdown(options_categories, searchable=True, placeholder='Select one or many...', multi=True, id='input_categories_capability', style={'font-size' : '14px'}),
+        html.Br(),
         html_label('Relevance'),
         # dcc.Dropdown(options_relevance, multi=True, id='input_relevance'),
         dbc.Checklist(options=options_relevance, id='input_relevance', style={'font-size' : '14px'}),
+        html.Br(),
         html_label_center('< Rating >'),        
         # dbc.Input(type='number', min=1, max=5, value=1, id='input_min_rating_capability'),
         dcc.RangeSlider(min=1, max=5, step=1, value=[1, 5], id='input_min_rating_capability'),
+        html.Br(),
         html_label_center('< Frequent — Rare >'),          
         dcc.RangeSlider(min=0, step=1, marks=None, id='input_capability_graph_slider')
     ], gap=1)
@@ -108,29 +112,25 @@ search_tab_inputs = style_dbc([
     dbc.Stack([
         html_label('Technology'),
         dcc.Dropdown(options_technologies, searchable=True, clearable=True, placeholder='Select one or many...', multi=True, id='input_technology', style={'font-size' : '12px'}),
+        html.Br(),
         html_label_center('< Rating >'),
         dcc.RangeSlider(min=1, max=5, step=1, value=[1, 5], id='input_min_rating_search')
     ], gap=1)
 ])
 
 # search tab table
-search_tab_table = dbc.Container([
-    dbc.Stack([
-        # html_label('Results'),
-        html.Br(),
-        html.Div([], id='search_table')
-    ])
-], fluid=True)
+search_tab_table = style_dbc([
+    html.Div([html_label('Consultants')], style={'text-align' : 'center'}),
+    html.Br(),
+    html.Div([], id='search_table')
+])
 
 # search tab table counts
-search_tab_table_counts = dbc.Container([
-    dbc.Stack([
-        # html_label('Summary'),
-        html.Br(),
-        html.Div([
-        ], id='search_table_counts')
-    ])
-], fluid=True)
+search_tab_table_counts = style_dbc([
+    html.Div([html_label('Summary')], style={'text-align' : 'center'}),
+    html.Br(),
+    html.Div([], id='search_table_counts')
+])
 
 # search tab
 search_tab = dbc.Container([
@@ -152,12 +152,16 @@ comparison_tab_inputs = style_dbc([
     dbc.Stack([
         html_label('Profile 1'),
         dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_1', style={'font-size' : '14px'}),
+        html.Br(),
         html_label('Profile 2'),
         dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_consultant_2', style={'font-size' : '14px'}),
+        html.Br(),
         html_label('Persona Stream'),
         dcc.Dropdown(options_streams, id='input_persona_stream', placeholder='Select one or many...', multi=True, style={'font-size' : '14px'}),
+        html.Br(),
         html_label('Platform, Area or Categories'),
         dcc.Dropdown(options_categories, searchable=True, multi=True, placeholder='Select one or many...', id='input_categories', style={'font-size' : '14px'}),
+        html.Br(),
         html_label_center('Show Ratings'),
         dcc.Slider(min=5, max=10, step=1, value=7, id='input_n_ratings')
     ], gap=1)    
