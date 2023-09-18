@@ -219,10 +219,12 @@ profile_ai_summary_tab_inputs = style_dbc([
     dbc.Stack([
         html_label('Profile'),
         dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_profile_ai', style={'font-size' : '14px'}),
-        html_label_center('Verbosity'),        
-        dcc.Slider(min=100, max=500, step=50, value=200, id='input_summary_words'),
+        html.Br(),
+        html_label_center('Verbosity'),    
+        dcc.Slider(min=100, max=500, step=100, value=200, id='input_summary_words'),
+        html.Br(),
         dbc.Button("Generate profile", color="light", id='generate_summary'),
-    ], gap=3)    
+    ], gap=1)    
 ])
 
 # profile ai summary text

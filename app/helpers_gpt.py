@@ -20,16 +20,19 @@ def completion_with_backoff(**kwargs):
 def generate_prompt_from_data(df, input_name: str, out_words: int):
     skill_list = (
         df
+        .query('relevance in ["Focus", "Red hot"]')
         [['consultant_name', 'technology', 'skill_rating']]
         .query('consultant_name == @input_name')
-        .query('skill_rating >= 4')
+        .query('skill_rating >= 3')
         ['technology'].str.strip()
         .to_list()
     )
     return \
         '''
-        {} is proficient in the following skills separated by comma: {} .{} works as consulant in the data industry. Provide a profile summary for {} in
-        {} words or less. Use Australian English spelling. 
+        {} is proficient in the skills separated by comma: {} .{} works as consulant in the data and
+         analytics industry. 
+        Provide a profile summary for {} in
+        {} words or less, use Australian English and avoid using the names of the provided skills in your response.
         '''.format(
         input_name, ','.join(skill_list), input_name, input_name, out_words, input_name
     ).replace('\n', ' ').strip()
