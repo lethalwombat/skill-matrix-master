@@ -37,7 +37,7 @@ long_callback_manager = DiskcacheLongCallbackManager(cache)
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(__name__, external_stylesheets=[dbc.themes.LUX, dbc_css], long_callback_manager=long_callback_manager)
 app.title = 'éxpose skills matrix'
-# BasicAuth(app, USER_PWD)
+BasicAuth(app, USER_PWD)
 server = app.server
 
 # wrapper to style dcc componenets as dbc
