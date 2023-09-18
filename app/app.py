@@ -2,8 +2,11 @@ import plotly.graph_objects as go
 import pandas as pd
 import dash_bootstrap_components as dbc
 import diskcache
+import os
 from dash.long_callback import DiskcacheLongCallbackManager
 from dash import Dash, dcc, html, dash_table, Input, Output, State, callback_context
+from dash_auth import BasicAuth
+
 from random import choice
 from helpers_dash import (
     heading, card_tab,
@@ -24,11 +27,16 @@ from helpers_gpt import (
 )
 
 # app set-up
+USER_PWD = {
+    os.getenv('USER') : os.getenv('PASSWORD')
+}
+
 cache = diskcache.Cache("./cache")
 long_callback_manager = DiskcacheLongCallbackManager(cache)
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(__name__, external_stylesheets=[dbc.themes.LUX, dbc_css], long_callback_manager=long_callback_manager)
 app.title = 'éxpose skills matrix'
+BasicAuth(app, USER_PWD)
 server = app.server
 
 # wrapper to style dcc componenets as dbc
@@ -212,7 +220,7 @@ profile_ai_summary_tab_inputs = style_dbc([
         dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_profile_ai', style={'font-size' : '14px'}),
         html_label_center('Verbosity'),        
         dcc.Slider(min=100, max=500, step=50, value=200, id='input_summary_words'),
-        dbc.Button("Generate summary", color="light", id='generate_summary'),
+        dbc.Button("Generate profile", color="light", id='generate_summary'),
     ], gap=3)    
 ])
 
