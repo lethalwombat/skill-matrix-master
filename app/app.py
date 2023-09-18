@@ -434,5 +434,5 @@ def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value):
         # generate_prompt_from_data(df, input_profile_ai_value, input_summary_words_value), summary_heading_style, html_label(f'Profile summary for {input_profile_ai_value}')
 
 # uncomment below for development and debugging
-if __name__ == '__main__':
-    app.run_server(port='8051', host='0.0.0.0', debug=True)
+# if __name__ == '__main__':
+#     app.run_server(port='8051', host='0.0.0.0', debug=True)
