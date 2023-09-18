@@ -11,6 +11,7 @@ from random import choice
 from helpers_dash import (
     heading, card_tab,
     html_label, html_label_center,
+    dash_text_wrapper
 )
 from helpers_data import (
     df_renamer, df_dropper,
@@ -231,7 +232,8 @@ profile_ai_summary_tab_text = style_dbc([
     html.Div([
         html.Progress(className='d-grid gap-1 col-6 mx-auto')
         ], style={'display' : 'none'}, id='summary_progress_bar'),
-    html.P(id='gpt_response'),
+    html.Div(id='gpt_response'),
+    # html.P(id='gpt_response'),
 ])
 
 # profile ai summary tab
@@ -427,6 +429,8 @@ from time import sleep
     ],
     running=[
         (Output('generate_summary', 'disabled'), True, False),
+        (Output('input_profile_ai', 'disabled'), True, False),    
+        (Output('input_summary_words', 'disabled'), True, False),            
         (Output('gpt_response', 'style'), {'display' : 'none'}, {'display' : 'block'}),
         (Output('summary_heading_hide', 'children'), html_label(f'Generating profile summary...'), ''),
         (Output('summary_heading_hide', 'style'), {'display' : 'block', 'text-align' : 'center'}, {'display' : 'block', 'text-align' : 'center'}),
@@ -437,8 +441,9 @@ from time import sleep
 def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value):
     summary_heading_style = {'display' : 'block', 'text-align' : 'center'}
     sleep(1) # wait 1 second to prevent too many calls
+    response = generate_profile_summary(df, input_profile_ai_value, input_summary_words_value)
     return \
-        generate_profile_summary(df, input_profile_ai_value, input_summary_words_value), summary_heading_style, html_label(f'Profile summary for {input_profile_ai_value}')
+        dash_text_wrapper(response), summary_heading_style, html_label(f'Profile summary for {input_profile_ai_value}')
         # generate_prompt_from_data(df, input_profile_ai_value, input_summary_words_value), summary_heading_style, html_label(f'Profile summary for {input_profile_ai_value}')
 
 # uncomment below for development and debugging

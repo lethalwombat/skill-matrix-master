@@ -37,3 +37,13 @@ def dash_table_interactive(df):
 def dash_table_simple(df):
         return dash_table.DataTable(data=df.to_dict('records'))
 
+# wrap text into paragraphs
+def dash_text_wrapper(text: str, sep='\n\n'):    
+    div_out = []
+    text_list = text.split(sep)
+    for par in text_list:
+          div_out.append(html.P(par))
+          div_out.append(html.Br())
+    if len(div_out) > 0:
+          return div_out[:-1]
+    return div_out
