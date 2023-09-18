@@ -9,7 +9,6 @@ from tenacity import (
 
 # get the gpt api key and authenticate
 API_KEY = os.getenv('GPT_API_KEY')
-API_KEY = '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'
 openai.api_key = API_KEY
 
 # define the exponential back-off request
