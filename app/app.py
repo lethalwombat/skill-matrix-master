@@ -1,11 +1,18 @@
 import plotly.graph_objects as go
 import pandas as pd
 import dash_bootstrap_components as dbc
+import diskcache
+import os
+from time import sleep
+from dash.long_callback import DiskcacheLongCallbackManager
 from dash import Dash, dcc, html, dash_table, Input, Output, State, callback_context
+from dash_auth import BasicAuth
+
 from random import choice
 from helpers_dash import (
     heading, card_tab,
     html_label, html_label_center,
+    dash_text_wrapper
 )
 from helpers_data import (
     df_renamer, df_dropper,
@@ -16,11 +23,22 @@ from helpers_data import (
 from helpers_plotly import (
     radar_single, radar_comparison
 )
+from helpers_gpt import (
+    generate_prompt_from_data, # for testing purposes only 
+    generate_profile_summary
+)
 
 # app set-up
+USER_PWD = {
+    os.getenv('USER') : os.getenv('PASSWORD')
+}
+
+cache = diskcache.Cache("./cache")
+long_callback_manager = DiskcacheLongCallbackManager(cache)
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-app = Dash(__name__, external_stylesheets=[dbc.themes.LUX, dbc_css])
-app.title = 'éxpose Skills Matrix'
+app = Dash(__name__, external_stylesheets=[dbc.themes.LUX, dbc_css], long_callback_manager=long_callback_manager)
+app.title = 'éxpose skills matrix'
+BasicAuth(app, USER_PWD)
 server = app.server
 
 # wrapper to style dcc componenets as dbc
@@ -54,7 +72,22 @@ options_names = get_selector_options('consultant_name')
 options_streams = sorted(df['persona_stream'].explode().unique().tolist())
 options_categories = get_selector_options('platform_area_categories')
 options_relevance = get_selector_options('relevance')
+options_gpt_model = [
+    {
+        'label' : 'gpt-3.5-turbo',
+        'value' : 'gpt-3.5-turbo',
+        'disabled' : False
+    },
+    {
+        'label' : 'gpt-4',
+        'value' : 'gpt-4',
+        'disabled' : False
+    }    
+]
 
+options_gpt_model_disabled = [
+    {'label' : opt['label'], 'value' : opt['value'], 'disabled' : True} for opt in options_gpt_model
+]
 
 # capabilities tab inputs
 capabilities_tab_inputs = style_dbc([
@@ -197,16 +230,44 @@ comparison_tab = dbc.Container([
     ])
 ], fluid=True)
 
-# # skills graph
-# test_graph = dcc.Graph(
-#     id='my_graph',
-#     config={
-#         'displayModeBar': False,
-#         'scrollZoom' : False,
-#         'staticPlot' : True
-#         },
-#     # figure=px_radar()
-# )
+# profile ai summary
+profile_ai_summary_tab_inputs = style_dbc([
+    dbc.Stack([
+        html_label('Profile'),
+        dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_profile_ai', style={'font-size' : '14px'}),
+        html.Br(),
+        html_label_center('Verbosity'),
+        dcc.Slider(min=100, max=500, step=100, value=200, id='input_summary_words'),
+        html.Br(),
+        html_label_center('GPT Model'),
+        dbc.RadioItems(options=options_gpt_model, value=options_gpt_model[0]['value'], inline=True, id='input_gpt_model', style={'font-size' : '14px'}),
+        html.Br(),
+        dbc.Button("Generate profile", color="light", id='generate_summary'),
+    ], gap=1)    
+])
+
+# profile ai summary text
+profile_ai_summary_tab_text = style_dbc([
+    html.Div([html_label('Summary')], style={'display' : 'none'}, id='summary_heading_hide'),
+    html.Br(),
+    html.Div([
+        html.Progress(className='d-grid gap-1 col-6 mx-auto')
+        ], style={'display' : 'none'}, id='summary_progress_bar'),
+    html.Div(id='gpt_response'),
+    # html.P(id='gpt_response'),
+])
+
+# profile ai summary tab
+profile_ai_summary_tab = dbc.Container([
+    dbc.Row([
+        dbc.Col([
+            profile_ai_summary_tab_inputs
+        ], width=3),
+        dbc.Col([
+            profile_ai_summary_tab_text
+        ], width=9),
+    ])
+], fluid=True)
 
 # application layout
 app.layout = dbc.Container([
@@ -214,8 +275,9 @@ app.layout = dbc.Container([
     dbc.Tabs(
         [
             card_tab(label='Capabilities', content=capabilities_tab, id='tab_capabilities'),
-            card_tab(label='Search', content=search_tab, id='tab_search'),
             card_tab(label='Profiles', content=comparison_tab, id='tab_comparison'),
+            card_tab(label='Profile Summary', content=profile_ai_summary_tab, id='tab_profile_ai_summary'),
+            card_tab(label='Search', content=search_tab, id='tab_search'),
         ])
 ], fluid=True)
 
@@ -372,6 +434,40 @@ def update_table(
         dbc.Table.from_dataframe(df_out, striped=True, bordered=True, size='sm'),\
         dbc.Table.from_dataframe(df_out_counts, bordered=True, size='sm')
 
+
+# profile ai summary callback
+@app.long_callback(
+    output=[
+        Output('gpt_response', 'children'),
+        Output('summary_heading_hide', 'style'),
+        Output('summary_heading_hide', 'children'),
+    ],
+    inputs=[
+        Input('generate_summary', 'n_clicks'),
+        State('input_profile_ai', 'value'),
+        State('input_summary_words', 'value'),
+        State('input_gpt_model', 'value'),
+    ],
+    running=[
+        (Output('generate_summary', 'disabled'), True, False),
+        (Output('input_profile_ai', 'disabled'), True, False),    
+        (Output('input_summary_words', 'disabled'), True, False),
+        (Output('input_gpt_model', 'options'), options_gpt_model_disabled, options_gpt_model),
+        (Output('gpt_response', 'style'), {'display' : 'none'}, {'display' : 'block'}),
+        (Output('summary_heading_hide', 'children'), html_label(f'Generating profile summary...'), ''),
+        (Output('summary_heading_hide', 'style'), {'display' : 'block', 'text-align' : 'center'}, {'display' : 'block', 'text-align' : 'center'}),
+        (Output('summary_progress_bar', 'style'), {'display' : 'block'}, {'display' : 'none'})
+    ],
+    prevent_initial_call=True
+)
+def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value, input_gpt_model_value):
+    summary_heading_style = {'display' : 'block', 'text-align' : 'center'}
+    sleep(1) # wait 1 second to prevent too many calls
+    response = generate_profile_summary(df, input_profile_ai_value, input_summary_words_value, input_gpt_model_value)
+    return \
+        dash_text_wrapper(response), summary_heading_style, html_label(f'Profile summary for {input_profile_ai_value} by {input_gpt_model_value}')
+        # generate_prompt_from_data(df, input_profile_ai_value, input_summary_words_value), summary_heading_style, html_label(f'Profile summary for {input_profile_ai_value}')
+
 # uncomment below for development and debugging
-if __name__ == '__main__':
-    app.run_server(port='8051', host='0.0.0.0', debug=True)
+# if __name__ == '__main__':
+#     app.run_server(port='8051', host='0.0.0.0', debug=True)

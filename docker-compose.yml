@@ -1,6 +1,8 @@
 version: '3.6'
 services:
-  azure-insta-paas:
+  skills-matrix-master:
+    env_file:
+      - .env
     image: skills-matrix-master:latest
     build:
       context: .
@@ -14,4 +16,3 @@ services:
     #   - ./app:/app
     # entrypoint: ["python", "app.py"]
     entrypoint: ["gunicorn", "-w", "4", "-b", "0.0.0.0:80", "app:server"]
-
