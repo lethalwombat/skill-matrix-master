@@ -38,13 +38,13 @@ def generate_prompt_from_data(df, input_name: str, out_words: int):
     ).replace('\n', ' ').strip()
 
 # ask chat gpt
-def generate_profile_summary(df, input_name: str, out_words: int):
+def generate_profile_summary(df, input_name: str, out_words: int, gpt_model: str):
 
     # input
     prompt = generate_prompt_from_data(df, input_name, out_words)
 
     response = completion_with_backoff(
-        model = 'gpt-3.5-turbo',
+        model = gpt_model,
         messages=[
             {"role": "system", "content": "You are a helpful assistant that writes staff profile summaries."},
             {"role": "user", "content": prompt}

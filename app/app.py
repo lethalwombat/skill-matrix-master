@@ -3,6 +3,7 @@ import pandas as pd
 import dash_bootstrap_components as dbc
 import diskcache
 import os
+from time import sleep
 from dash.long_callback import DiskcacheLongCallbackManager
 from dash import Dash, dcc, html, dash_table, Input, Output, State, callback_context
 from dash_auth import BasicAuth
@@ -71,7 +72,22 @@ options_names = get_selector_options('consultant_name')
 options_streams = sorted(df['persona_stream'].explode().unique().tolist())
 options_categories = get_selector_options('platform_area_categories')
 options_relevance = get_selector_options('relevance')
+options_gpt_model = [
+    {
+        'label' : 'gpt-3.5-turbo',
+        'value' : 'gpt-3.5-turbo',
+        'disabled' : False
+    },
+    {
+        'label' : 'gpt-4',
+        'value' : 'gpt-4',
+        'disabled' : False
+    }    
+]
 
+options_gpt_model_disabled = [
+    {'label' : opt['label'], 'value' : opt['value'], 'disabled' : True} for opt in options_gpt_model
+]
 
 # capabilities tab inputs
 capabilities_tab_inputs = style_dbc([
@@ -220,8 +236,11 @@ profile_ai_summary_tab_inputs = style_dbc([
         html_label('Profile'),
         dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_profile_ai', style={'font-size' : '14px'}),
         html.Br(),
-        html_label_center('Verbosity'),    
+        html_label_center('Verbosity'),
         dcc.Slider(min=100, max=500, step=100, value=200, id='input_summary_words'),
+        html.Br(),
+        html_label_center('GPT Model'),
+        dbc.RadioItems(options=options_gpt_model, value=options_gpt_model[0]['value'], inline=True, id='input_gpt_model', style={'font-size' : '14px'}),
         html.Br(),
         dbc.Button("Generate profile", color="light", id='generate_summary'),
     ], gap=1)    
@@ -415,7 +434,6 @@ def update_table(
         dbc.Table.from_dataframe(df_out, striped=True, bordered=True, size='sm'),\
         dbc.Table.from_dataframe(df_out_counts, bordered=True, size='sm')
 
-from time import sleep
 
 # profile ai summary callback
 @app.long_callback(
@@ -427,12 +445,14 @@ from time import sleep
     inputs=[
         Input('generate_summary', 'n_clicks'),
         State('input_profile_ai', 'value'),
-        State('input_summary_words', 'value')
+        State('input_summary_words', 'value'),
+        State('input_gpt_model', 'value'),
     ],
     running=[
         (Output('generate_summary', 'disabled'), True, False),
         (Output('input_profile_ai', 'disabled'), True, False),    
-        (Output('input_summary_words', 'disabled'), True, False),            
+        (Output('input_summary_words', 'disabled'), True, False),
+        (Output('input_gpt_model', 'options'), options_gpt_model_disabled, options_gpt_model),
         (Output('gpt_response', 'style'), {'display' : 'none'}, {'display' : 'block'}),
         (Output('summary_heading_hide', 'children'), html_label(f'Generating profile summary...'), ''),
         (Output('summary_heading_hide', 'style'), {'display' : 'block', 'text-align' : 'center'}, {'display' : 'block', 'text-align' : 'center'}),
@@ -440,12 +460,12 @@ from time import sleep
     ],
     prevent_initial_call=True
 )
-def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value):
+def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value, input_gpt_model_value):
     summary_heading_style = {'display' : 'block', 'text-align' : 'center'}
     sleep(1) # wait 1 second to prevent too many calls
-    response = generate_profile_summary(df, input_profile_ai_value, input_summary_words_value)
+    response = generate_profile_summary(df, input_profile_ai_value, input_summary_words_value, input_gpt_model_value)
     return \
-        dash_text_wrapper(response), summary_heading_style, html_label(f'Profile summary for {input_profile_ai_value}')
+        dash_text_wrapper(response), summary_heading_style, html_label(f'Profile summary for {input_profile_ai_value} by {input_gpt_model_value}')
         # generate_prompt_from_data(df, input_profile_ai_value, input_summary_words_value), summary_heading_style, html_label(f'Profile summary for {input_profile_ai_value}')
 
 # uncomment below for development and debugging
