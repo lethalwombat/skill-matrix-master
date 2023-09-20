@@ -97,13 +97,14 @@ def radar_single(df, value: str, variable: str, range_r: list, fill_color: str):
 
 # word cloud
 def word_cloud(df):
-    space_multiplier = 1000
+    space_multiplier = 10
     n_records = df.shape[0]
     axes_space = n_records * space_multiplier
 
     data = go.Scatter(
         x=choices(range(space_multiplier, axes_space-space_multiplier), k=n_records),
-        y=choices(range(space_multiplier, axes_space-space_multiplier), k=n_records),
+        y=[i for i in range(space_multiplier, axes_space, space_multiplier)],
+        # y=choices(range(space_multiplier, axes_space-space_multiplier), k=n_records),
         mode='text',
         text=df['word'].tolist(), 
         marker={
