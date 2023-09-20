@@ -24,6 +24,10 @@ RUN \
 # copy applications assets into the container
 COPY app /app/
 
+# download nltk assets
+RUN \
+    python3 /app/nltk_download.py
+
 # entrypoint to the application
 # CMD ["python", "app.py"]
 ENTRYPOINT ["gunicorn", "-w", "4", "-b", "0.0.0.0:80", "app:server"]
