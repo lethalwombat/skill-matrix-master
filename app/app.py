@@ -492,7 +492,7 @@ def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value, 
     # response = generate_prompt_from_data(df, input_profile_ai_value, input_summary_words_value)
 
     # compute word frequencies
-    df_word_cloud = nltk_count_words(response, input_profile_ai_value, text_magnify=120, n_freq=min(int(input_summary_words_value/10), 30))
+    df_word_cloud = nltk_count_words(response, input_profile_ai_value, text_magnify=120, n_freq=min(int(input_summary_words_value/20), 30))
     fig_word_cloud = word_cloud(df_word_cloud)
 
     return \
