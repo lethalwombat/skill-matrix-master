@@ -264,7 +264,7 @@ profile_ai_summary_tab_wc_graph = html.Div([
 profile_ai_summary_tab_text = style_dbc([
     dbc.Stack([
         html.Div([html_label('Summary')], style={'display' : 'none'}, id='summary_heading_hide'),
-        dbc.Col(profile_ai_summary_tab_wc_graph, width={'size' : 6, 'offset' : 3}),
+        dbc.Col(profile_ai_summary_tab_wc_graph, width={'size' : 10, 'offset' : 1}),
         html.Div([
             html.Progress(className='d-grid gap-1 col-6 mx-auto')
             ], style={'display' : 'none'}, id='summary_progress_bar'),

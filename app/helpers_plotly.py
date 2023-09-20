@@ -126,8 +126,8 @@ def word_cloud(df):
                 },
             'plot_bgcolor' : 'white',
             'autosize' : True,
-            # 'width' : 500,
-            'height' : 250,            
+            # 'width' : 600,
+            'height' : 200,            
             'margin' : {
                 'l' : 0,
                 'r' : 0,
