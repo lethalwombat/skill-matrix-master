@@ -9,3 +9,4 @@ multiprocess==0.70.15
 gunicorn==20.1.0
 openai==0.28.0
 tenacity==8.2.3
+nltk==3.8.1
