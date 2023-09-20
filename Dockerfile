@@ -26,7 +26,8 @@ COPY app /app/
 
 # download nltk assets
 RUN \
-    python3 /app/nltk_download.py
+    python3 nltk_download.py && \
+    rm nltk_download.py
 
 # entrypoint to the application
 # CMD ["python", "app.py"]
