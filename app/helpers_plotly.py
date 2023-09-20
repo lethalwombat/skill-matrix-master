@@ -1,4 +1,7 @@
 import plotly.express as px
+import plotly
+import plotly.graph_objs as go
+from random import choices
 
 # color themes
 COLOR_1 = '#800080'
@@ -90,4 +93,49 @@ def radar_single(df, value: str, variable: str, range_r: list, fill_color: str):
         )
     )
 
+    return fig
+
+# word cloud
+def word_cloud(df):
+    space_multiplier = 10
+    n_records = df.shape[0]
+    axes_space = n_records * space_multiplier
+
+    data = go.Scatter(
+        x=choices(range(space_multiplier, axes_space-space_multiplier), k=n_records),
+        y=[i for i in range(space_multiplier, axes_space, space_multiplier)],
+        # y=choices(range(space_multiplier, axes_space-space_multiplier), k=n_records),
+        mode='text',
+        text=df['word'].tolist(), 
+        marker={
+            'opacity': 0.3
+            },
+        textfont={
+            # 'size': df['frequency'].tolist(),
+            'size': df['text_size'].tolist(),
+            'color': [COLOR_1 for i in range(df.shape[0])]
+            }
+        )
+    layout = go.Layout(
+        {
+            'xaxis': {
+                'visible' : False
+                },
+            'yaxis': {
+                'visible' : False
+                },
+            'plot_bgcolor' : 'white',
+            'autosize' : True,
+            # 'width' : 600,
+            'height' : 200,            
+            'margin' : {
+                'l' : 0,
+                'r' : 0,
+                't' : 0,
+                'b' : 0
+            }
+        }
+    )
+    fig = go.Figure(data=[data], layout=layout)
+    fig.update_layout(xaxis_range=[1, axes_space], yaxis_range=[1, axes_space])
     return fig
