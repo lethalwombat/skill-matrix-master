@@ -11,6 +11,7 @@ heading = lambda x : html.H4(x, style={'color' : COLOR_1, 'text-align' : 'center
 
 # label
 html_label = lambda x : html.Label(x, style={'color' : COLOR_2, 'text-align' : 'right'})
+html_label_named = lambda x, y : html.Label(x, style={'color' : COLOR_2, 'text-align' : 'right'}, id=y)
 html_label_center = lambda x : html.Label(x, style={'color' : COLOR_2, 'text-align' : 'center'})
 
 # card tab wrapper

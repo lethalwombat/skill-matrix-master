@@ -11,7 +11,7 @@ from dash_auth import BasicAuth
 from random import choice
 from helpers_dash import (
     heading, card_tab,
-    html_label, html_label_center,
+    html_label, html_label_center, html_label_named,
     dash_text_wrapper
 )
 from helpers_data import (
@@ -25,7 +25,7 @@ from helpers_plotly import (
     word_cloud
 )
 from helpers_gpt import (
-    generate_prompt_from_data, # for testing purposes only 
+    generate_prompt_from_data, generate_prompt_from_data_capability, # for testing purposes only 
     generate_profile_summary
 )
 from helpers_nltk import (
@@ -237,8 +237,11 @@ comparison_tab = dbc.Container([
 # profile ai summary
 profile_ai_summary_tab_inputs = style_dbc([
     dbc.Stack([
-        html_label('Profile'),
-        dcc.Dropdown(options_names, choice(options_names), searchable=True, clearable=False, id='input_profile_ai', style={'font-size' : '14px'}),
+        html_label('Summary'),
+        dcc.Dropdown(['Persona Stream', 'Profile'], value='Persona Stream', clearable=False, style={'font-size' : '14px'}, id='input_ai_summary_type'),
+        html.Br(),
+        html_label_named('Profile', 'input_ai_summary_type_label'),
+        dcc.Dropdown(searchable=True, clearable=False, id='input_profile_ai', multi=False, style={'font-size' : '14px'}),
         html.Br(),
         html_label_center('Verbosity'),
         dcc.Slider(min=100, max=500, step=100, value=200, id='input_summary_words'),
@@ -292,9 +295,10 @@ app.layout = dbc.Container([
     top_heading,
     dbc.Tabs(
         [
+            # card_tab(label='Profile Summary', content=profile_ai_summary_tab, id='tab_profile_ai_summary'),
             card_tab(label='Capabilities', content=capabilities_tab, id='tab_capabilities'),
             card_tab(label='Profiles', content=comparison_tab, id='tab_comparison'),
-            card_tab(label='Profile Summary', content=profile_ai_summary_tab, id='tab_profile_ai_summary'),
+            card_tab(label='Summary', content=profile_ai_summary_tab, id='tab_profile_ai_summary'),
             card_tab(label='Search', content=search_tab, id='tab_search'),
             # card_tab(label='testing', content=testing_tab, id='tab_test'),            
         ])
@@ -470,14 +474,19 @@ def update_table(
         State('input_profile_ai', 'value'),
         State('input_summary_words', 'value'),
         State('input_gpt_model', 'value'),
+        State('input_ai_summary_type', 'value'),        
     ],
     running=[
+        (Output('tab_capabilities', 'disabled'), True, False),
+        (Output('tab_comparison', 'disabled'), True, False),        
+        (Output('tab_search', 'disabled'), True, False),                
+        (Output('input_ai_summary_type', 'disabled'), True, False),
         (Output('generate_summary', 'disabled'), True, False),
         (Output('input_profile_ai', 'disabled'), True, False),    
         (Output('input_summary_words', 'disabled'), True, False),
         (Output('input_gpt_model', 'options'), options_gpt_model_disabled, options_gpt_model),
         (Output('gpt_response', 'style'), {'display' : 'none'}, {'display' : 'block'}),
-        (Output('summary_heading_hide', 'children'), html_label(f'Generating profile summary...'), ''),
+        (Output('summary_heading_hide', 'children'), html_label(f'Working on it...'), ''),
         (Output('summary_heading_hide', 'style'), {'display' : 'block', 'text-align' : 'center'}, {'display' : 'block', 'text-align' : 'center'}),
         (Output('summary_gpt_heading_hide', 'style'), {'display' : 'none', 'text-align' : 'center'}, {'display' : 'block', 'text-align' : 'center'}),        
         (Output('summary_progress_bar', 'style'), {'display' : 'block'}, {'display' : 'none'}),
@@ -485,11 +494,28 @@ def update_table(
     ],
     prevent_initial_call=True
 )
-def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value, input_gpt_model_value):
+def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value, input_gpt_model_value, input_ai_summary_type_value):
     summary_heading_style = {'display' : 'block', 'text-align' : 'center'}
     sleep(1) # wait 1 second to prevent too many calls
+
+    # persona stream 
+    if input_ai_summary_type_value == 'Persona Stream':
+        response = 'Not enough consultants found. Please adjust your selection criteria.'
+        persona_stream_prompt = generate_prompt_from_data_capability(df, input_profile_ai_value, input_summary_words_value)
+        if persona_stream_prompt != '':
+            pass #TODO chat gpt request
+            response = generate_profile_summary(persona_stream_prompt, input_profile_ai_value, input_summary_words_value, input_gpt_model_value)
+        
+        df_word_cloud = nltk_count_words(response, '-'.join(input_profile_ai_value), text_magnify=120, n_freq=min(int(input_summary_words_value/20), 30))
+        fig_word_cloud = word_cloud(df_word_cloud)
+
+        return \
+            dash_text_wrapper(response), summary_heading_style, html_label('{}'.format(', '.join(input_profile_ai_value))),\
+            fig_word_cloud, {'display' : 'block'},\
+            summary_heading_style, html_label(f'Persona stream summary by {input_gpt_model_value}')
+
+    
     response = generate_profile_summary(df, input_profile_ai_value, input_summary_words_value, input_gpt_model_value)
-    # response = generate_prompt_from_data(df, input_profile_ai_value, input_summary_words_value)
 
     # compute word frequencies
     df_word_cloud = nltk_count_words(response, input_profile_ai_value, text_magnify=120, n_freq=min(int(input_summary_words_value/20), 30))
@@ -499,8 +525,39 @@ def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value, 
         dash_text_wrapper(response), summary_heading_style, html_label(f'{input_profile_ai_value}'),\
         fig_word_cloud, {'display' : 'block'},\
         summary_heading_style, html_label(f'Profile summary by {input_gpt_model_value}')
-        
+
+ # change label for the ai summary type
+@app.callback(
+     Output('input_ai_summary_type_label', 'children'),
+     Output('input_profile_ai', 'options'),
+     Output('input_profile_ai', 'value'),
+     Output('generate_summary', 'children'),
+     Output('input_profile_ai', 'multi'),
+     Input('input_ai_summary_type', 'value'),
+     )
+def update_label(
+    input_ai_summary_type_value
+):
+    # disable generate button if no valid input
+    if input_ai_summary_type_value == 'Profile':
+        return input_ai_summary_type_value, options_names, choice(options_names), 'Create Profile summary', False
+    return input_ai_summary_type_value, options_streams, [choice(options_streams)], 'Create Persona stream summary', True
+
+# disable generate button if no valid profile input
+@app.callback(
+    Output('generate_summary', 'disabled'),
+    Input('input_profile_ai', 'value')
+)
+def update_button_state(input_profile_ai_value):
+    if any([
+        input_profile_ai_value is None,
+        len(input_profile_ai_value) == 0
+    ]):
+        return True
+    return False
+
 
 # uncomment below for development and debugging
 # if __name__ == '__main__':
 #     app.run_server(port='8051', host='0.0.0.0', debug=True)
+

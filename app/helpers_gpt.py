@@ -1,5 +1,6 @@
 import os
 import openai
+from helpers_data import df_filter_multiple
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -37,16 +38,50 @@ def generate_prompt_from_data(df, input_name: str, out_words: int):
         input_name, ','.join(skill_list), input_name, input_name, out_words, input_name
     ).replace('\n', ' ').strip()
 
-# ask chat gpt
-def generate_profile_summary(df, input_name: str, out_words: int, gpt_model: str):
+# generate the prompt from data for the capability
+def generate_prompt_from_data_capability(df, input_name: list, out_words: int):
+    df_pool = (
+        df
+        .pipe(df_filter_multiple, input_name, 'persona_stream')
+        [['technology', 'relevance', 'consultant_name', 'skill_rating']]
+        .query('relevance in ["Focus", "Red hot"]')
+        .query('skill_rating >= 4')
+    )
+    # the pool is too small for a prompt
+    if df_pool.shape[0] < 10:
+        return ''
+    
+    table_skilled = (
+        df_pool
+        .groupby('technology')
+        .count()
+        .reset_index()
+        [['technology', 'skill_rating']]
+        .to_string(index=False, header=False)
+    )
 
-    # input
-    prompt = generate_prompt_from_data(df, input_name, out_words)
+    return \
+        '''
+        Below is the list of technology names followed by the number of 
+        consultants skilled in the technology for the {} capability. Provide an overview of the technology areas
+        where there is  enough skills and identify current and potential skill gaps.
+        {}. Recommend additional emerging technologies 
+        to upskill in in the {} capability.
+        Provide the result in {} words or less. 
+        '''.format('-'.join(input_name), table_skilled, '-'.join(input_name), out_words)
+
+# ask chat gpt
+def generate_profile_summary(df, input_name, out_words: int, gpt_model: str):
+    
+    prompt = df
+    # convert input to string prompt
+    if not isinstance(df, str):
+        prompt = generate_prompt_from_data(df, input_name, out_words)
 
     response = completion_with_backoff(
         model = gpt_model,
         messages=[
-            {"role": "system", "content": "You are a helpful assistant that writes staff profile summaries."},
+            {"role": "system", "content": "You are a helpful assistant that writes staff profile summaries"},
             {"role": "user", "content": prompt}
         ]
     )
