@@ -63,12 +63,12 @@ def generate_prompt_from_data_capability(df, input_name: list, out_words: int):
     return \
         '''
         Below is the list of technology names followed by the number of 
-        consultants skilled in the technology for the {} capability. Provide an overview of the technology areas
+        consultants skilled in the technology for the "{}" capability. Provide an overview of the technology areas
         where there is  enough skills and identify current and potential skill gaps.
         {}. Recommend additional emerging technologies 
-        to upskill in in the {} capability.
+        to upskill in in the "{}" capability.
         Provide the result in {} words or less. 
-        '''.format('-'.join(input_name), table_skilled, '-'.join(input_name), out_words)
+        '''.format(','.join(input_name), table_skilled, ','.join(input_name), out_words)
 
 # ask chat gpt
 def generate_profile_summary(df, input_name, out_words: int, gpt_model: str):
