@@ -500,12 +500,14 @@ def get_ai_summary(n_clicks, input_profile_ai_value, input_summary_words_value, 
 
     # persona stream 
     if input_ai_summary_type_value == 'Persona Stream':
-        response = 'Not enough consultants found. Please adjust your selection criteria.'
+        response = 'Not enough data to summarise. found. Please adjust your selection criteria.'
         persona_stream_prompt = generate_prompt_from_data_capability(df, input_profile_ai_value, input_summary_words_value)
-        if persona_stream_prompt != '':
-            pass #TODO chat gpt request
-            response = generate_profile_summary(persona_stream_prompt, input_profile_ai_value, input_summary_words_value, input_gpt_model_value)
-        
+        if persona_stream_prompt == '':
+            return \
+                '', summary_heading_style, html_label(response),\
+                None, {'display' : 'none'}, summary_heading_style, html.H1('', style={'display' : 'none'})
+            
+        response = generate_profile_summary(persona_stream_prompt, input_profile_ai_value, input_summary_words_value, input_gpt_model_value)
         df_word_cloud = nltk_count_words(response, '-'.join(input_profile_ai_value), text_magnify=120, n_freq=min(int(input_summary_words_value/20), 30))
         fig_word_cloud = word_cloud(df_word_cloud)
 
