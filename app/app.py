@@ -206,7 +206,7 @@ comparison_tab_inputs = style_dbc([
 
 # comparison tab graph
 comparison_tab_graph = dbc.Container([
-    html_label('Ratings'),
+    html_label('Skills'),
     html.Div([
         dcc.Graph(
             id='comparison_graph',
@@ -217,7 +217,7 @@ comparison_tab_graph = dbc.Container([
     ], id='comparison_graph_hide'),
     html.Div([
         html.Br(),
-        html.Label('No ratings found. Please adjust your selection criteria')
+        html.Label('No skills found. Please adjust your selection criteria')
     ], id='comparison_no_one_found', style={'display' : 'block'})
 ], fluid=True, style={'text-align' : 'center'})
 
