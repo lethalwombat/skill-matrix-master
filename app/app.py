@@ -199,7 +199,7 @@ comparison_tab_inputs = style_dbc([
         html_label('Platform, Area or Categories'),
         dcc.Dropdown(options_categories, searchable=True, multi=True, placeholder='Select one or many...', id='input_categories', style={'font-size' : '14px'}),
         html.Br(),
-        html_label_center('Show Ratings'),
+        html_label_center('Number of Skills'),
         dcc.Slider(min=5, max=10, step=1, value=7, id='input_n_ratings')
     ], gap=1)    
 ])
